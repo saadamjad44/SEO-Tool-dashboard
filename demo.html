@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEO Tools Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2563eb',
+                        success: '#10b981',
+                        warning: '#f59e0b',
+                        error: '#ef4444',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50">
+    <div id="root"></div>
+
+    <script type="module">
+        import React from 'https://esm.sh/react@18.3.1';
+        import ReactDOM from 'https://esm.sh/react-dom@18.3.1/client';
+        const { useState, useMemo } = React;
+
+        // Stop words
+        const stopWords = new Set(['a', 'about', 'above', 'after', 'again', 'against', 'all', 'am', 'an', 'and', 'any', 'are', 'as', 'at', 'be', 'because', 'been', 'before', 'being', 'below', 'between', 'both', 'but', 'by', 'can', 'cannot', 'could', 'did', 'do', 'does', 'doing', 'down', 'during', 'each', 'few', 'for', 'from', 'further', 'had', 'has', 'have', 'having', 'he', 'her', 'here', 'hers', 'herself', 'him', 'himself', 'his', 'how', 'i', 'if', 'in', 'into', 'is', 'it', 'its', 'itself', 'me', 'more', 'most', 'my', 'myself', 'no', 'nor', 'not', 'of', 'off', 'on', 'once', 'only', 'or', 'other', 'our', 'ours', 'ourselves', 'out', 'over', 'own', 'same', 'she', 'should', 'so', 'some', 'such', 'than', 'that', 'the', 'their', 'theirs', 'them', 'themselves', 'then', 'there', 'these', 'they', 'this', 'those', 'through', 'to', 'too', 'under', 'until', 'up', 'very', 'was', 'we', 'were', 'what', 'when', 'where', 'which', 'while', 'who', 'whom', 'why', 'with', 'would', 'you', 'your', 'yours', 'yourself', 'yourselves']);
+
+        // Utility functions
+        function countSyllables(word) {
+            word = word.toLowerCase().trim();
+            if (word.length <= 3) return 1;
+            word = word.replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/, '');
+            word = word.replace(/^y/, '');
+            const syllables = word.match(/[aeiouy]{1,2}/g);
+            return syllables ? syllables.length : 1;
+        }
+
+        function analyzeKeywords(text) {
+            if (!text.trim()) return [];
+            const words = text.toLowerCase().match(/\b[\w']+\b/g) || [];
+            const totalWords = words.length;
+            const keywordMap = new Map();
+
+            words.forEach(word => {
+                if (!stopWords.has(word) && word.length > 2) {
+                    keywordMap.set(word, (keywordMap.get(word) || 0) + 1);
+                }
+            });
+
+            for (let i = 0; i < words.length - 1; i++) {
+                const phrase = `${words[i]} ${words[i + 1]}`;
+                keywordMap.set(phrase, (keywordMap.get(phrase) || 0) + 1);
+            }
+
+            const results = [];
+            keywordMap.forEach((count, keyword) => {
+                if (count > 1) {
+                    const density = (count / totalWords) * 100;
+                    let status = 'optimal';
+                    if (density > 3) status = 'high';
+                    else if (density < 0.5) status = 'low';
+                    results.push({ keyword, count, density, status });
+                }
+            });
+
+            return results.sort((a, b) => b.count - a.count).slice(0, 20);
+        }
+
+        function calculateReadability(text) {
+            if (!text.trim()) return { fleschReadingEase: 0, interpretation: 'No text' };
+
+            const words = text.match(/\b[\w']+\b/g) || [];
+            const sentences = Math.max((text.match(/[.!?]+/g) || []).length, 1);
+            const syllables = words.reduce((sum, word) => sum + countSyllables(word), 0);
+
+            const score = 206.835 - 1.015 * (words.length / sentences) - 84.6 * (syllables / words.length);
+            const fleschReadingEase = Math.max(0, Math.min(100, score));
+
+            let interpretation = '';
+            if (fleschReadingEase >= 70) interpretation = 'Easy';
+            else if (fleschReadingEase >= 50) interpretation = 'Standard';
+            else interpretation = 'Difficult';
+
+            return { fleschReadingEase: Math.round(fleschReadingEase * 10) / 10, interpretation };
+        }
+
+        // Components
+        function Header() {
+            return React.createElement('header', { className: 'bg-primary text-white py-6 px-4 shadow-lg' },
+                React.createElement('div', { className: 'max-w-7xl mx-auto' },
+                    React.createElement('h1', { className: 'text-3xl font-bold mb-2' }, 'SEO Tools Dashboard'),
+                    React.createElement('p', { className: 'text-blue-100' }, 'Analyze your content for search engine optimization')
+                )
+            );
+        }
+
+        function App() {
+            const [text, setText] = useState('');
+            const [activeTab, setActiveTab] = useState('keyword');
+
+            const keywords = useMemo(() => analyzeKeywords(text), [text]);
+            const readability = useMemo(() => calculateReadability(text), [text]);
+            const wordCount = useMemo(() => (text.match(/\b[\w']+\b/g) || []).length, [text]);
+
+            return React.createElement('div', { className: 'min-h-screen bg-gray-50' },
+                React.createElement(Header),
+                React.createElement('main', { className: 'max-w-7xl mx-auto px-4 py-8' },
+                    React.createElement('div', { className: 'mb-6' },
+                        React.createElement('textarea', {
+                            value: text,
+                            onChange: (e) => setText(e.target.value),
+                            placeholder: 'Enter your content here...',
+                            className: 'w-full h-64 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary resize-none'
+                        })
+                    ),
+                    React.createElement('div', { className: 'bg-white rounded-lg shadow-lg p-6' },
+                        React.createElement('div', { className: 'border-b mb-6' },
+                            React.createElement('nav', { className: 'flex -mb-px' },
+                                ['keyword', 'readability', 'counter'].map(tab =>
+                                    React.createElement('button', {
+                                        key: tab,
+                                        onClick: () => setActiveTab(tab),
+                                        className: `py-4 px-6 border-b-2 ${activeTab === tab ? 'border-primary text-primary' : 'border-transparent text-gray-500'}`
+                                    }, tab === 'keyword' ? 'Keywords' : tab === 'readability' ? 'Readability' : 'Word Count')
+                                )
+                            )
+                        ),
+                        activeTab === 'keyword' && React.createElement('div', {},
+                            React.createElement('div', { className: 'mb-4 text-2xl font-bold' }, `Total Words: ${wordCount}`),
+                            keywords.length === 0 ? React.createElement('p', { className: 'text-gray-500' }, 'Enter text to analyze') :
+                            React.createElement('table', { className: 'w-full' },
+                                React.createElement('thead', {},
+                                    React.createElement('tr', { className: 'border-b-2' },
+                                        React.createElement('th', { className: 'text-left py-3 px-4' }, 'Keyword'),
+                                        React.createElement('th', { className: 'text-center py-3 px-4' }, 'Count'),
+                                        React.createElement('th', { className: 'text-center py-3 px-4' }, 'Density'),
+                                        React.createElement('th', { className: 'text-center py-3 px-4' }, 'Status')
+                                    )
+                                ),
+                                React.createElement('tbody', {},
+                                    keywords.map((kw, i) =>
+                                        React.createElement('tr', { key: i, className: 'border-b hover:bg-gray-50' },
+                                            React.createElement('td', { className: 'py-3 px-4' }, kw.keyword),
+                                            React.createElement('td', { className: 'py-3 px-4 text-center' }, kw.count),
+                                            React.createElement('td', { className: 'py-3 px-4 text-center font-bold' }, `${kw.density.toFixed(2)}%`),
+                                            React.createElement('td', { className: 'py-3 px-4 text-center' },
+                                                React.createElement('span', { className: `px-3 py-1 rounded-full text-xs ${kw.status === 'optimal' ? 'bg-success/10 text-success' : kw.status === 'high' ? 'bg-error/10 text-error' : 'bg-warning/10 text-warning'}` }, kw.status)
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        ),
+                        activeTab === 'readability' && React.createElement('div', { className: 'text-center' },
+                            React.createElement('div', { className: 'text-6xl font-bold mb-4 text-primary' }, readability.fleschReadingEase),
+                            React.createElement('div', { className: 'text-2xl' }, readability.interpretation)
+                        ),
+                        activeTab === 'counter' && React.createElement('div', { className: 'grid grid-cols-2 gap-4' },
+                            React.createElement('div', { className: 'p-6 bg-blue-50 rounded-lg' },
+                                React.createElement('div', { className: 'text-sm text-gray-600' }, 'Words'),
+                                React.createElement('div', { className: 'text-3xl font-bold' }, wordCount)
+                            ),
+                            React.createElement('div', { className: 'p-6 bg-green-50 rounded-lg' },
+                                React.createElement('div', { className: 'text-sm text-gray-600' }, 'Characters'),
+                                React.createElement('div', { className: 'text-3xl font-bold' }, text.length)
+                            )
+                        )
+                    )
+                )
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(React.createElement(App));
+    </script>
+</body>
+</html>
