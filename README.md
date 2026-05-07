@@ -1,54 +1,34 @@
 # SEO Tools Dashboard
 
-A client-side web application providing essential SEO analysis tools that run entirely in the browser without requiring a backend server.
+## Quick Start (No Build Tool Needed)
 
-## Features
+### Option 1: Direct Browser (Recommended)
+Simply open `demo.html` in your browser - it works immediately with no installation.
 
-- **Keyword Density Checker**: Analyze keyword frequency and distribution (1-4 word phrases)
-- **Meta Tag Analyzer**: Evaluate meta tags for SEO best practices with SERP preview
-- **Readability Score**: Calculate Flesch Reading Ease and Flesch-Kincaid Grade Level
-- **Word Counter**: Detailed text statistics including reading/speaking time estimates
-
-## Tech Stack
-
-- React 18 + TypeScript
-- Vite
-- Tailwind CSS
-- 100% client-side processing
-
-## Getting Started
-
-### Install Dependencies
+### Option 2: Python Server
 ```bash
-npm install
+python -m http.server 8000
 ```
+Then open: http://localhost:8000/demo.html
 
-### Run Development Server
+### Option 3: PHP Server
 ```bash
-npm run dev
+php -S localhost:8000
 ```
+Then open: http://localhost:8000/demo.html
 
-### Build for Production
-```bash
-npm run build
-```
+## Why Build Tools Don't Work
 
-### Preview Production Build
-```bash
-npm run preview
-```
+Your system has Application Control policies blocking native modules (.node files) used by:
+- Vite (Rollup)
+- Parcel (SWC)
 
-## Usage
+This is a security restriction, not a safety issue with the tools.
 
-1. Enter or paste your content in the text area
-2. Switch between Text and HTML modes as needed
-3. Navigate through the tabs to view different analyses
-4. All processing happens in your browser - no data is sent to any server
+## Production Deployment
 
-## Privacy
+Upload the `demo.html` file to any web hosting - it's completely self-contained and works without a build step.
 
-This tool is completely privacy-focused. All analysis happens client-side in your browser. No data is transmitted to any server.
+## Full Source Code
 
-## License
-
-MIT
+The complete React + TypeScript source is in the `src/` folder for future use when you have access to a system without these restrictions.
